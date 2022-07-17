@@ -17,24 +17,38 @@ package io.jboot.components.rpc;
 
 import io.jboot.components.rpc.annotation.RPCInject;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ReferenceConfigCache {
 
-    private static Map<Integer, JbootrpcReferenceConfig> configs = new ConcurrentHashMap<>();
+    private static Map<String, JbootrpcReferenceConfig> refrenceConfigCache = new ConcurrentHashMap<>();
 
-    public static JbootrpcReferenceConfig getReferenceConfig(RPCInject rpcInject) {
-        int identityHashCode = System.identityHashCode(rpcInject);
-        JbootrpcReferenceConfig referenceConfig = configs.get(identityHashCode);
+
+    public static JbootrpcReferenceConfig get(Class<?> targetClass, RPCInject rpcInject) {
+        String cacheKey = buildKey(targetClass, rpcInject);
+        JbootrpcReferenceConfig referenceConfig = refrenceConfigCache.get(cacheKey);
         if (referenceConfig == null) {
             JbootrpcReferenceConfig config = new JbootrpcReferenceConfig();
             RPCUtil.appendAnnotation(RPCInject.class, rpcInject, config);
-            configs.putIfAbsent(identityHashCode, config);
+            refrenceConfigCache.putIfAbsent(cacheKey, config);
 
-            referenceConfig = configs.get(identityHashCode);
+            referenceConfig = refrenceConfigCache.get(cacheKey);
         }
-
         return referenceConfig;
+    }
+
+
+
+    private static String buildKey(Class<?> targetClass, RPCInject rpcInject) {
+        return targetClass.getName() + "@" + hashCode(rpcInject);
+    }
+
+
+    private static int hashCode(RPCInject a) {
+        return Objects.hash(a.group(), a.version(), a.url(), a.generic(), a.check(), a.retries(), a.loadbalance(), a.async(), a.actives(), a.timeout()
+                , a.application(), a.module(), a.consumer(), a.monitor(), Arrays.hashCode(a.registry()), a.protocol(), a.tag(), a.id());
     }
 }
