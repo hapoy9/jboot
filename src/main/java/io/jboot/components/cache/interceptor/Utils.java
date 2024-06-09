@@ -115,8 +115,8 @@ class Utils {
 
     public static void ensureCacheNameNotBlank(Method method, String cacheName) {
         if (StrUtil.isBlank(cacheName)) {
-            throw new JbootException(String.format("Cache name must not empty or blank in method: " +
-                    ClassUtil.buildMethodString(method)));
+            throw new IllegalStateException("Cache Name must not empty or blank in method: " +
+                    ClassUtil.buildMethodString(method));
         }
     }
 
@@ -146,7 +146,7 @@ class Utils {
                 || clazz == LocalDateTime.class
                 || clazz == LocalTime.class
                 || clazz.isArray()
-                || clazz.isAssignableFrom(Collection.class)
+                || Collection.class.isAssignableFrom(clazz)
                 || clazz == Columns.class
                 ;
 
@@ -158,9 +158,9 @@ class Utils {
         }
 
         if (!isSupportClass(object.getClass())) {
-            String msg = "Unsupported empty key for annotation @Cacheable, @CacheEvict or @CachePut " +
-                    "at method[" + ClassUtil.buildMethodString(method) + "], " +
-                    "Please config key properties in the annotation.";
+            String msg = "Unsupport empty key for annotation @Cacheable, @CacheEvict or @CachePut " +
+                    "at method [" + ClassUtil.buildMethodString(method) + "], " +
+                    "please config key in the annotation.";
             throw new IllegalArgumentException(msg);
         }
 
@@ -229,10 +229,7 @@ class Utils {
             return false;
         }
 
-//        if (!unlessString.contains("#")) {
         unlessString = "#(" + unlessString + ")";
-//        }
-
         return "true".equals(engineRender(unlessString, method, arguments));
     }
 

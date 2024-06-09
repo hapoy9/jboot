@@ -28,11 +28,12 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
 
 public class ClassScanner {
 
-    private static final Set<Class> appClassesCache = new HashSet<>();
+    private static final Set<Class<?>> appClassesCache = new HashSet<>();
 
     public static final Set<String> scanJars = new HashSet<>();
     public static final Set<String> excludeJars = new HashSet<>();
@@ -40,7 +41,7 @@ public class ClassScanner {
     public static final Set<String> scanClasses = new HashSet<>();
     public static final Set<String> excludeClasses = new HashSet<>();
 
-    // 默认关闭扫描信息的控制台输出
+    // dev模式打开扫描信息打印
     private static boolean printScannerInfoEnable = false;
 
     public static boolean isPrintScannerInfoEnable() {
@@ -301,6 +302,49 @@ public class ClassScanner {
         excludeJars.add("ip2region-");
         excludeJars.add("java-uuid-generator-");
         excludeJars.add("quartz-");
+        excludeJars.add("elasticjob-");
+        excludeJars.add("reflections-");
+        excludeJars.add("jts-");
+        excludeJars.add("json-");
+        excludeJars.add("httpclient5-");
+        excludeJars.add("httpcore5-");
+        excludeJars.add("jul-to-");
+        excludeJars.add("calcite-");
+        excludeJars.add("avatica-");
+        excludeJars.add("encoder-");
+        excludeJars.add("aggdesigner-");
+        excludeJars.add("uzaygezen-");
+        excludeJars.add("memory-");
+        excludeJars.add("commons-");
+        excludeJars.add("accessors-");
+        excludeJars.add("sketches-");
+        excludeJars.add("h2-");
+        excludeJars.add("cosid-");
+        excludeJars.add("mchange-");
+        excludeJars.add("janino-");
+        excludeJars.add("jnanoid-");
+        excludeJars.add("proj4j-");
+        excludeJars.add("sparsebitset-");
+        excludeJars.add("captcha-");
+        excludeJars.add("cryptokit");
+        excludeJars.add("isec-");
+        excludeJars.add("jurt-");
+        excludeJars.add("minio-");
+        excludeJars.add("logging-");
+        excludeJars.add("simple-xml-");
+        excludeJars.add("jodconverter-");
+        excludeJars.add("credentials-");
+        excludeJars.add("unoil-");
+        excludeJars.add("endpoint-");
+        excludeJars.add("ridl-");
+        excludeJars.add("tencentcloud-");
+        excludeJars.add("yauaa-");
+        excludeJars.add("tea-");
+        excludeJars.add("fr.");
+        excludeJars.add("vod20");
+        excludeJars.add("juh-");
+        excludeJars.add("prefixmap-");
+        excludeJars.add("dmjdbcdriver");
     }
 
 
@@ -623,11 +667,44 @@ public class ClassScanner {
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
                 JarEntry jarEntry = entries.nextElement();
-                if (!jarEntry.isDirectory()) {
-                    String entryName = jarEntry.getName();
+                String entryName = jarEntry.getName();
+                if (jarEntry.isDirectory() && entryName.startsWith("BOOT-INF/classes/")) {
+
+                    if (isPrintScannerInfoEnable()) {
+                        System.out.println("Jboot Scan entryName: " + entryName);
+                    }
+
                     if (entryName.endsWith(".class")) {
                         String className = entryName.replace("/", ".").substring(0, entryName.length() - 6);
                         addClass(classForName(className));
+                    }
+                } else {
+                    if (entryName.endsWith(".class")) {
+                        String className = entryName.replace("/", ".").substring(0, entryName.length() - 6);
+                        addClass(classForName(className));
+                    } else if (entryName.startsWith("BOOT-INF/lib/") && entryName.endsWith(".jar")) {
+                        if (!isIncludeJar(entryName)) {
+                            continue;
+                        }
+
+                        if (isPrintScannerInfoEnable()) {
+                            System.out.println("Jboot Scan Jar: " + entryName);
+                        }
+
+                        try (JarInputStream jarStream = new JarInputStream(jarFile
+                                .getInputStream(jarEntry));) {
+                            JarEntry innerEntry = jarStream.getNextJarEntry();
+                            while (innerEntry != null) {
+                                if (!innerEntry.isDirectory()) {
+                                    String nestedEntryName = innerEntry.getName();
+                                    if (nestedEntryName.endsWith(".class")) {
+                                        String className = nestedEntryName.replace("/", ".").substring(0, nestedEntryName.length() - 6);
+                                        addClass(classForName(className));
+                                    }
+                                }
+                                innerEntry = jarStream.getNextJarEntry();
+                            }
+                        }
                     }
                 }
             }
@@ -700,7 +777,10 @@ public class ClassScanner {
                     }
 
                     if (!path.toLowerCase().endsWith(".jar")) {
-                        classPaths.add(new File(path).getCanonicalPath().replace('\\', '/'));
+                        if (path.toLowerCase().endsWith("!/") || path.toLowerCase().endsWith("!")) {
+                        } else {
+                            classPaths.add(new File(path).getCanonicalPath().replace('\\', '/'));
+                        }
                     } else {
                         jarPaths.add(new File(path).getCanonicalPath().replace('\\', '/'));
                     }
@@ -737,7 +817,10 @@ public class ClassScanner {
             }
             try {
                 if (!path.toLowerCase().endsWith(".jar") && !jarPaths.contains(path)) {
-                    classPaths.add(new File(path).getCanonicalPath().replace('\\', '/'));
+                    if (path.toLowerCase().endsWith("!/") || path.toLowerCase().endsWith("!")) {
+                    } else {
+                        classPaths.add(new File(path).getCanonicalPath().replace('\\', '/'));
+                    }
                 } else {
                     jarPaths.add(new File(path).getCanonicalPath().replace('\\', '/'));
                 }

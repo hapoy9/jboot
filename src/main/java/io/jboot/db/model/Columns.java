@@ -275,8 +275,8 @@ public class Columns implements Serializable {
      * @param condition
      * @return
      */
-    public Columns isNullIf(String name, boolean condition) {
-        if (condition) {
+    public Columns isNullIf(String name, Boolean condition) {
+        if (condition != null && condition) {
             add(Column.create(name, null, Column.LOGIC_IS_NULL));
         }
         return this;
@@ -301,8 +301,8 @@ public class Columns implements Serializable {
      * @param condition
      * @return
      */
-    public Columns isNotNullIf(String name, boolean condition) {
-        if (condition) {
+    public Columns isNotNullIf(String name, Boolean condition) {
+        if (condition != null && condition) {
             add(Column.create(name, null, Column.LOGIC_IS_NOT_NULL));
         }
         return this;
@@ -318,18 +318,23 @@ public class Columns implements Serializable {
      */
     public Columns in(String name, Object... arrays) {
         Util.checkNullParas(this, name, arrays);
+
+        //忽略 columns.in("name", null) 的情况
+        if (arrays != null && arrays.length == 1 && arrays[0] == null) {
+            return this;
+        }
         return add(Column.create(name, arrays, Column.LOGIC_IN));
     }
 
 
     /**
-     * in list
+     * in Collection
      *
      * @param name
      * @param collection
      * @return
      */
-    public Columns in(String name, Collection collection) {
+    public Columns in(String name, Collection<?> collection) {
         Util.checkNullParas(this, collection);
         if (collection != null && !collection.isEmpty()) {
             in(name, collection.toArray());
@@ -346,18 +351,23 @@ public class Columns implements Serializable {
      */
     public Columns notIn(String name, Object... arrays) {
         Util.checkNullParas(this, name, arrays);
+
+        //忽略 columns.notIn("name", null) 的情况
+        if (arrays != null && arrays.length == 1 && arrays[0] == null) {
+            return this;
+        }
         return add(Column.create(name, arrays, Column.LOGIC_NOT_IN));
     }
 
 
     /**
-     * not in list
+     * not in Collection
      *
      * @param name
      * @param collection
      * @return
      */
-    public Columns notIn(String name, Collection collection) {
+    public Columns notIn(String name, Collection<?> collection) {
         Util.checkNullParas(this, collection);
         if (collection != null && !collection.isEmpty()) {
             notIn(name, collection.toArray());
@@ -412,14 +422,14 @@ public class Columns implements Serializable {
 
     /**
      * @param columns
-     * @param conditon
+     * @param condition
      * @return
      */
-    public Columns groupIf(Columns columns, boolean conditon) {
+    public Columns groupIf(Columns columns, Boolean condition) {
         if (columns == this) {
             throw new IllegalArgumentException("Columns.group(...) need a new Columns");
         }
-        if (conditon && !columns.isEmpty()) {
+        if (condition != null && condition && !columns.isEmpty()) {
             add(new Group(columns));
         }
         return this;
@@ -499,8 +509,8 @@ public class Columns implements Serializable {
      * @param condition
      * @return
      */
-    public Columns sqlPartIf(String sql, boolean condition) {
-        if (condition && StrUtil.isNotBlank(sql)) {
+    public Columns sqlPartIf(String sql, Boolean condition) {
+        if (condition != null && condition && StrUtil.isNotBlank(sql)) {
             add(new SqlPart(sql));
         }
         return this;
@@ -514,9 +524,9 @@ public class Columns implements Serializable {
      * @param paras
      * @return
      */
-    public Columns sqlPartIf(String sql, boolean condition, Object... paras) {
+    public Columns sqlPartIf(String sql, Boolean condition, Object... paras) {
         Util.checkNullParas(this, paras);
-        if (condition && StrUtil.isNotBlank(sql)) {
+        if (condition != null && condition && StrUtil.isNotBlank(sql)) {
             add(new SqlPart(sql, paras));
         }
         return this;
@@ -557,8 +567,8 @@ public class Columns implements Serializable {
      * @param condition
      * @return
      */
-    public Columns sqlPartWithoutLinkIf(String sql, boolean condition) {
-        if (condition && StrUtil.isNotBlank(sql)) {
+    public Columns sqlPartWithoutLinkIf(String sql, Boolean condition) {
+        if (condition != null && condition && StrUtil.isNotBlank(sql)) {
             add(new SqlPart(sql, true));
         }
         return this;
@@ -572,9 +582,9 @@ public class Columns implements Serializable {
      * @param paras
      * @return
      */
-    public Columns sqlPartWithoutLinkIf(String sql, boolean condition, Object... paras) {
+    public Columns sqlPartWithoutLinkIf(String sql, Boolean condition, Object... paras) {
         Util.checkNullParas(this, paras);
-        if (condition && StrUtil.isNotBlank(sql)) {
+        if (condition != null && condition && StrUtil.isNotBlank(sql)) {
             add(new SqlPart(sql, paras, true));
         }
         return this;
@@ -589,16 +599,19 @@ public class Columns implements Serializable {
 
     public Columns ors(String name, String logic, Object... values) {
         Util.checkNullParas(this, name, values);
+
+        Columns columns = new Columns();
         for (int i = 0; i < values.length; i++) {
             Object value = values[i];
             if (value != null) {
-                add(Column.create(name, value, logic));
+                columns.add(Column.create(name, value, logic));
                 if (i != values.length - 1) {
-                    add(new Or());
+                    columns.add(new Or());
                 }
             }
         }
-        return this;
+
+        return group(columns);
     }
 
 
@@ -629,8 +642,8 @@ public class Columns implements Serializable {
      * @param columns
      * @return
      */
-    public Columns appendIf(Columns columns, boolean condition) {
-        if (condition) {
+    public Columns appendIf(Columns columns, Boolean condition) {
+        if (condition != null && condition) {
             append(columns);
         }
         return this;

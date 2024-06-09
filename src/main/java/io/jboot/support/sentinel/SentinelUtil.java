@@ -164,21 +164,22 @@ public class SentinelUtil {
     }
 
 
-
     protected static final String contentType = "application/json; charset=utf-8";
 
     public static void writeDefaultBlockedJson(HttpServletResponse resp, Map map) throws IOException {
         resp.setStatus(200);
         resp.setContentType(contentType);
-        PrintWriter out = resp.getWriter();
-        out.print(JsonKit.toJson(map));
+        try (PrintWriter out = resp.getWriter()) {
+            out.print(JsonKit.toJson(map));
+        }
     }
 
 
     public static void writeDefaultBlockedPage(HttpServletResponse resp) throws IOException {
         resp.setStatus(200);
-        PrintWriter out = resp.getWriter();
-        out.print("Blocked by Sentinel (flow limiting) in Jboot");
+        try (PrintWriter out = resp.getWriter()) {
+            out.print("Blocked by Sentinel (flow limiting) in Jboot");
+        }
     }
 
 

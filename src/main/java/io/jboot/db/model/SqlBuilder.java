@@ -15,6 +15,7 @@
  */
 package io.jboot.db.model;
 
+import com.jfinal.kit.LogKit;
 import io.jboot.utils.ArrayUtil;
 import io.jboot.utils.StrUtil;
 
@@ -36,10 +37,9 @@ public class SqlBuilder {
 
     public static String forDeleteByColumns(String alias, List<Join> joins, String table, List<Column> columns, char separator) {
         StringBuilder sqlBuilder = new StringBuilder(45);
-        sqlBuilder.append("DELETE FROM ")
-                .append(separator)
-                .append(table)
-                .append(separator);
+        sqlBuilder.append("DELETE FROM ");
+
+        appendTextWithSeparator(sqlBuilder, table, separator);
 
         buildAlias(sqlBuilder, alias);
         buildJoinSql(sqlBuilder, joins, separator);
@@ -85,35 +85,35 @@ public class SqlBuilder {
         for (int i = 0; i < columns.size(); i++) {
 
             Column before = i > 0 ? columns.get(i - 1) : null;
-            Column curent = columns.get(i);
+            Column current = columns.get(i);
 
-            if (curent instanceof Or) {
+            if (current instanceof Or) {
                 continue;
             }
             // sqlPart
-            else if (curent instanceof SqlPart) {
-                appendSqlPartLogic(sqlBuilder, before, (SqlPart) curent, separator);
+            else if (current instanceof SqlPart) {
+                appendSqlPartLogic(sqlBuilder, before, (SqlPart) current, separator);
             }
             // group
-            else if (curent instanceof Group) {
-                appendGroupLogic(sqlBuilder, before, (Group) curent, separator);
+            else if (current instanceof Group) {
+                appendGroupLogic(sqlBuilder, before, (Group) current, separator);
             }
             // in logic
-            else if (Column.LOGIC_IN.equals(curent.getLogic()) || Column.LOGIC_NOT_IN.equals(curent.getLogic())) {
+            else if (Column.LOGIC_IN.equals(current.getLogic()) || Column.LOGIC_NOT_IN.equals(current.getLogic())) {
                 appendLinkString(sqlBuilder, before);
-                appendInLogic(sqlBuilder, curent, separator);
+                appendInLogic(sqlBuilder, current, separator);
             }
             // between logic
-            else if (Column.LOGIC_BETWEEN.equals(curent.getLogic()) || Column.LOGIC_NOT_BETWEEN.equals(curent.getLogic())) {
+            else if (Column.LOGIC_BETWEEN.equals(current.getLogic()) || Column.LOGIC_NOT_BETWEEN.equals(current.getLogic())) {
                 appendLinkString(sqlBuilder, before);
-                appendBetweenLogic(sqlBuilder, curent, separator);
+                appendBetweenLogic(sqlBuilder, current, separator);
             }
             // others
             else {
                 appendLinkString(sqlBuilder, before);
-                appendColumnName(sqlBuilder, curent, separator);
+                appendColumnName(sqlBuilder, current, separator);
 
-                if (curent.hasPara()) {
+                if (current.hasPara()) {
                     sqlBuilder.append('?');
                 }
             }
@@ -131,19 +131,10 @@ public class SqlBuilder {
 
 
     private static void appendColumnName(StringBuilder sqlBuilder, Column column, char separator) {
-        if (column.getName().contains(".")) {
-            sqlBuilder.append(column.getName())
-                    .append(' ')
-                    .append(column.getLogic())
-                    .append(' ');
-        } else {
-            sqlBuilder.append(separator)
-                    .append(column.getName())
-                    .append(separator)
-                    .append(' ')
-                    .append(column.getLogic())
-                    .append(' ');
-        }
+        appendTextWithSeparator(sqlBuilder, column.getName(), separator);
+        sqlBuilder.append(' ')
+                .append(column.getLogic())
+                .append(' ');
     }
 
 
@@ -208,27 +199,32 @@ public class SqlBuilder {
 
 
     public static void appendBetweenLogic(StringBuilder sqlBuilder, Column column, char separator) {
-        sqlBuilder.append(separator)
-                .append(column.getName())
-                .append(separator)
-                .append(' ')
-                .append(column.getLogic());
-
+        appendTextWithSeparator(sqlBuilder, column.getName(), separator);
+        sqlBuilder.append(' ').append(column.getLogic());
         sqlBuilder.append(" ? AND ?");
     }
+
+
+    public static void appendTextWithSeparator(StringBuilder sqlBuilder, String text, char separator) {
+        if (text.indexOf(".") > 0) {
+            sqlBuilder.append(text);
+        } else {
+            sqlBuilder.append(separator).append(text).append(separator);
+        }
+    }
+
 
     public static StringBuilder forFindByColumns(String alias, List<Join> joins, String table, String loadColumns, List<Column> columns, String orderBy, char separator) {
         StringBuilder sqlBuilder = new StringBuilder("SELECT ");
         sqlBuilder.append(loadColumns)
-                .append(" FROM ")
-                .append(separator)
-                .append(table)
-                .append(separator);
+                .append(" FROM ");
+        appendTextWithSeparator(sqlBuilder, table, separator);
 
         buildAlias(sqlBuilder, alias);
         buildJoinSql(sqlBuilder, joins, separator);
         buildWhereSql(sqlBuilder, columns, separator);
 
+        orderBy = escapeOrderBySql(orderBy);
         if (StrUtil.isNotBlank(orderBy)) {
             sqlBuilder.append(" ORDER BY ").append(orderBy);
         }
@@ -257,14 +253,14 @@ public class SqlBuilder {
 
 
     public static String forPaginateFrom(String alias, List<Join> joins, String table, List<Column> columns, String orderBy, char separator) {
-        StringBuilder sqlBuilder = new StringBuilder(" FROM ")
-                .append(separator)
-                .append(table)
-                .append(separator);
+        StringBuilder sqlBuilder = new StringBuilder(" FROM ");
+        appendTextWithSeparator(sqlBuilder, table, separator);
 
         buildAlias(sqlBuilder, alias);
         buildJoinSql(sqlBuilder, joins, separator);
         buildWhereSql(sqlBuilder, columns, separator);
+
+        orderBy = escapeOrderBySql(orderBy);
 
         if (StrUtil.isNotBlank(orderBy)) {
             sqlBuilder.append(" ORDER BY ").append(orderBy);
@@ -272,6 +268,7 @@ public class SqlBuilder {
 
         return sqlBuilder.toString();
     }
+
 
     public static void buildJoinSql(StringBuilder sqlBuilder, List<Join> joins, char separator) {
         if (joins == null || joins.isEmpty()) {
@@ -282,10 +279,8 @@ public class SqlBuilder {
                 continue;
             }
 
-            sqlBuilder.append(join.getType())
-                    .append(separator)
-                    .append(join.getTable())
-                    .append(separator);
+            sqlBuilder.append(join.getType());
+            appendTextWithSeparator(sqlBuilder, join.getTable(), separator);
 
             buildAlias(sqlBuilder, join.getAs());
 
@@ -303,15 +298,32 @@ public class SqlBuilder {
 
 
     public static String forFindCountByColumns(String alias, List<Join> joins, String table, String loadColumns, List<Column> columns, char separator) {
-        StringBuilder sqlBuilder = new StringBuilder("SELECT count(" + loadColumns + ") FROM ")
-                .append(separator)
-                .append(table)
-                .append(separator);
+        StringBuilder sqlBuilder = new StringBuilder("SELECT count(" + loadColumns + ") FROM ");
+        appendTextWithSeparator(sqlBuilder, table, separator);
 
         buildAlias(sqlBuilder, alias);
         buildJoinSql(sqlBuilder, joins, separator);
         buildWhereSql(sqlBuilder, columns, separator);
 
         return sqlBuilder.toString();
+    }
+
+
+    public static String escapeOrderBySql(String orignalOrderBy) {
+        if (StrUtil.isNotBlank(orignalOrderBy) && !isValidOrderBySql(orignalOrderBy)) {
+            LogKit.warn("Sql Warn: order_by value has inject chars and be filtered, order_by value: " + orignalOrderBy);
+            return "";
+        }
+        return orignalOrderBy;
+    }
+
+
+    /**
+     * 仅支持字母、数字、下划线、空格、逗号、小数点（支持多个字段排序）
+     */
+    private static String SQL_ORDER_BY_PATTERN = "[a-zA-Z0-9_\\ \\,\\.]+";
+
+    private static boolean isValidOrderBySql(String value) {
+        return value.matches(SQL_ORDER_BY_PATTERN);
     }
 }

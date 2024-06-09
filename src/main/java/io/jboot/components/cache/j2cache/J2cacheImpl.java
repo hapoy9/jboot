@@ -46,19 +46,35 @@ public class J2cacheImpl extends JbootCacheBase {
     public <T> T get(String cacheName, Object key) {
         cacheName = buildCacheName(cacheName);
         CacheObject cacheObject = J2Cache.getChannel().get(cacheName, key.toString(), false);
-        return cacheObject != null ? (T) cacheObject.getValue() : null;
+        if (cacheObject != null) {
+            Object value = cacheObject.getValue();
+            if (config.isDevMode()) {
+                println("J2cache GET: cacheName[" +cacheName+ "] cacheKey["+key+"] value:" + value);
+            }
+            return (T) value;
+        } else {
+            return null;
+        }
     }
 
     @Override
     public void put(String cacheName, Object key, Object value) {
         cacheName = buildCacheName(cacheName);
         J2Cache.getChannel().set(cacheName, key.toString(), value);
+
+        if (config.isDevMode()) {
+            println("J2cache PUT: cacheName[" +cacheName+ "] cacheKey["+key+"] value:" + value);
+        }
     }
 
     @Override
     public void put(String cacheName, Object key, Object value, int liveSeconds) {
         cacheName = buildCacheName(cacheName);
         J2Cache.getChannel().set(cacheName, key.toString(), value, liveSeconds);
+
+        if (config.isDevMode()) {
+            println("J2cache PUT: cacheName[" +cacheName+ "] cacheKey["+key+"] value:" + value);
+        }
     }
 
 
@@ -66,12 +82,20 @@ public class J2cacheImpl extends JbootCacheBase {
     public void remove(String cacheName, Object key) {
         cacheName = buildCacheName(cacheName);
         J2Cache.getChannel().evict(cacheName, key.toString());
+
+        if (config.isDevMode()) {
+            println("J2cache REMOVE: cacheName[" +cacheName+ "] cacheKey["+key+"]");
+        }
     }
 
     @Override
     public void removeAll(String cacheName) {
         cacheName = buildCacheName(cacheName);
         J2Cache.getChannel().clear(cacheName);
+
+        if (config.isDevMode()) {
+            println("J2cache REMOVEALL: cacheName[" +cacheName+ "]");
+        }
     }
 
     @Override
@@ -83,6 +107,11 @@ public class J2cacheImpl extends JbootCacheBase {
                 put(cacheName, key, value);
             }
         }
+
+        if (config.isDevMode()) {
+            println("J2cache GET: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + value);
+        }
+
         return (T) value;
     }
 
@@ -96,6 +125,10 @@ public class J2cacheImpl extends JbootCacheBase {
         if (data == null) {
             data = dataLoader.load();
             put(cacheName, key, data, liveSeconds);
+        }
+
+        if (config.isDevMode()) {
+            println("J2cache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + data);
         }
         return (T) data;
     }

@@ -33,6 +33,7 @@ public class DataSourceConfig {
     public static final String TYPE_SQLITE = "sqlite";
     public static final String TYPE_ANSISQL = "ansisql";
     public static final String TYPE_POSTGRESQL = "postgresql";
+    public static final String TYPE_DM = "dm";
     public static final String TYPE_CLICKHOUSE = "clickhouse";
     public static final String TYPE_INFORMIX = "informix";
 
@@ -85,6 +86,10 @@ public class DataSourceConfig {
     private String dialectClass;
     private String activeRecordPluginClass;
 
+    /**
+     * HikariCP 连接探活间隔时间 4.0.1以上版本支持，建议设置为10分钟以内
+     */
+    private Long keepaliveTime;
     /**
      * 是否需要添加到映射
      * 在一个表有多个数据源的情况下，应该只需要添加一个映射就可以了，
@@ -454,5 +459,13 @@ public class DataSourceConfig {
 
     public List<TableInfo> getTableInfos() {
         return tableInfos;
+    }
+
+    public Long getKeepaliveTime() {
+        return keepaliveTime;
+    }
+
+    public void setKeepaliveTime(Long keepaliveTime) {
+        this.keepaliveTime = keepaliveTime;
     }
 }

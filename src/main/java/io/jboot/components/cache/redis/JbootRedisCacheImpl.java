@@ -41,7 +41,9 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
 
     public JbootRedisCacheImpl(JbootCacheConfig config) {
         super(config);
+
         cacheConfig = Jboot.config(JbootRedisCacheConfig.class);
+
         if (StrUtil.isNotBlank(cacheConfig.getGlobalKeyPrefix())) {
             globalKeyPrefix = cacheConfig.getGlobalKeyPrefix() + ":";
             redisCacheNamesKey = globalKeyPrefix + redisCacheNamesKey;
@@ -55,14 +57,20 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
         }
 
         if (redis == null) {
-            throw new JbootIllegalConfigException("can not get redis, please check your jboot.properties , please correct config jboot.cache.redis.host or jboot.redis.host ");
+            throw new JbootIllegalConfigException("Can not get redis component in JbootRedisCacheImpl, Please check your jboot.properties " +
+                    "and config jboot.cache.redis.host or jboot.redis.host correct.");
         }
     }
 
 
     @Override
     public <T> T get(String cacheName, Object key) {
-        return redis.get(buildKey(cacheName, key));
+        T value = redis.get(buildKey(cacheName, key));
+
+        if (config.isDevMode()) {
+            println("RedisCache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + value);
+        }
+        return value;
     }
 
     @Override
@@ -73,6 +81,10 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
         }
         redis.set(buildKey(cacheName, key), value);
         redis.sadd(buildCacheName(redisCacheNamesKey), cacheName);
+
+        if (config.isDevMode()) {
+            println("RedisCache PUT: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + value);
+        }
     }
 
     @Override
@@ -88,12 +100,20 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
 
         redis.setex(buildKey(cacheName, key), liveSeconds, value);
         redis.sadd(buildCacheName(redisCacheNamesKey), cacheName);
+
+        if (config.isDevMode()) {
+            println("RedisCache PUT: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + value);
+        }
     }
 
 
     @Override
     public void remove(String cacheName, Object key) {
         redis.del(buildKey(cacheName, key));
+
+        if (config.isDevMode()) {
+            println("RedisCache REMOVE: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"]");
+        }
     }
 
 
@@ -118,6 +138,10 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
         } while (continueState);
 
         redis.srem(buildCacheName(redisCacheNamesKey), cacheName);
+
+        if (config.isDevMode()) {
+            println("RedisCache REMOVEALL: cacheName[" +buildCacheName(cacheName)+ "]");
+        }
     }
 
 
@@ -128,6 +152,11 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
             data = dataLoader.load();
             put(cacheName, key, data);
         }
+
+        if (config.isDevMode()) {
+            println("RedisCache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + data);
+        }
+
         return (T) data;
     }
 
@@ -161,6 +190,10 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
             data = dataLoader.load();
             put(cacheName, key, data, liveSeconds);
         }
+
+        if (config.isDevMode()) {
+            println("RedisCache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + data);
+        }
         return (T) data;
     }
 
@@ -175,6 +208,10 @@ public class JbootRedisCacheImpl extends JbootCacheBase {
     @Override
     public void setTtl(String cacheName, Object key, int seconds) {
         redis.expire(buildKey(cacheName, key), seconds);
+
+        if (config.isDevMode()) {
+            println("RedisCache SETTTL: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] seconds:" + seconds);
+        }
     }
 
 

@@ -36,6 +36,7 @@ import io.jboot.components.cache.support.JbootTokenCache;
 import io.jboot.components.gateway.JbootGatewayHandler;
 import io.jboot.components.gateway.JbootGatewayManager;
 import io.jboot.components.limiter.LimiterManager;
+import io.jboot.components.mq.JbootmqManager;
 import io.jboot.components.rpc.JbootrpcManager;
 import io.jboot.components.schedule.JbootScheduleManager;
 import io.jboot.core.listener.JbootAppListenerManager;
@@ -56,14 +57,14 @@ import io.jboot.utils.*;
 import io.jboot.web.JbootActionMapping;
 import io.jboot.web.JbootWebConfig;
 import io.jboot.web.PathVariableActionMapping;
-import io.jboot.web.converter.ArrayConverters;
-import io.jboot.web.converter.TypeConverterFunc;
 import io.jboot.web.attachment.AttachmentHandler;
 import io.jboot.web.attachment.LocalAttachmentContainerConfig;
 import io.jboot.web.controller.JbootControllerManager;
 import io.jboot.web.controller.annotation.GetMapping;
 import io.jboot.web.controller.annotation.PostMapping;
 import io.jboot.web.controller.annotation.RequestMapping;
+import io.jboot.web.converter.ArrayConverters;
+import io.jboot.web.converter.TypeConverterFunc;
 import io.jboot.web.directive.JbootOutputDirectiveFactory;
 import io.jboot.web.directive.SharedEnumObject;
 import io.jboot.web.directive.annotation.*;
@@ -406,9 +407,14 @@ public class JbootCoreConfig extends JFinalConfig {
         TypeConverter.me().setConvertFunc(new TypeConverterFunc());
         ArrayConverters.init();
 
+        //一般情况下，各个模块会在 onStart 进行添加监听器
+        //此时可以主动去启动下 mq
+        JbootmqManager.me().init();
 
         //使用场景：需要等所有组件 onStart() 完成之后，再去执行某些工作的时候
         JbootAppListenerManager.me().onStartFinish();
+
+
     }
 
     @Override
@@ -418,6 +424,8 @@ public class JbootCoreConfig extends JFinalConfig {
         JbootScheduleManager.me().stop();
         JbootSeataManager.me().stop();
         JbootrpcManager.me().stop();
+
+        JbootmqManager.me().stop();
     }
 
 

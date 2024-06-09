@@ -18,8 +18,9 @@ package io.jboot.app;
 import io.jboot.app.config.JbootConfigManager;
 
 import java.io.File;
-import java.net.URISyntaxException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
 
 public class ApplicationUtil {
 
@@ -68,7 +69,13 @@ public class ApplicationUtil {
 
         // 在某些情况下 通过 java -jar 运行时，会以 /config/ 结束
         if (urlStr.endsWith("/config/")) {
-            File urlPath = new File(url.getPath());
+            File urlPath;
+            try {
+                //中文目录乱码的问题
+                urlPath = new File(URLDecoder.decode(url.getFile(), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                urlPath = new File(url.getPath());
+            }
             return !urlPath.exists() || !urlPath.isDirectory();
         }
 
@@ -81,9 +88,14 @@ public class ApplicationUtil {
             if (runInFatjar()) {
                 System.out.println("JbootApplication is running in fatjar.");
             } else {
-                System.out.println("JbootApplication ClassPath: " + ApplicationUtil.class.getResource("/").toURI().getPath());
+                String path = ApplicationUtil.class.getResource("/").getPath();
+                // 例如： /D:/JAVA/workSpace_idea/...
+                if (path.indexOf(":") == 2) {
+                    path = path.substring(1);
+                }
+                System.out.println("JbootApplication classpath: " + path);
             }
-        } catch (URISyntaxException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

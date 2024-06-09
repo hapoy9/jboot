@@ -1,3 +1,227 @@
+jboot v4.1.6 2024-06-01:
+新增：根据 configName 获取 ActiveRecordPlugin 的功能，方便扩展，感谢 @caoyuan
+优化：优化 SentinelUtil 工具类
+优化：修正异常信息的错别字问题
+优化：升级 JFinal 等相关依赖到最新版本
+优化：升级并适配 Jedis 到最新版本
+修复：SentinelInterceptor 捕获异常后，渲染完页面要关闭输出流，感谢 @caoyuan
+
+
+
+jboot v4.1.5 2023-09-08:
+优化：MockProxy 由 Java Proxy 替换 cblib
+优化：增加 Hikari 连接池配置参数 keepaliveTime 配置功能，感谢 @赵锋
+优化：设置 SentinelInterceptor 返回自定义的 json 串，感谢 @caoyuan
+优化：SentinelConfig 新增 set 方法，方便用户自己通过代码注入，感谢 @caoyuan
+优化：修改方法的 wrap 与 toUpperCase 方法为public ，方便重写时决定SQL是否需要加引号与大小写，感谢 @HingLo-C
+优化：升级相关依赖到最新版本
+
+
+
+jboot v4.1.3 2023-06-21:
+优化：线程池同一使用 NamedThreadPools.java 进行构建
+优化：修改版错别字 taked 为 took
+优化：添加更多的扫描 jar 排除，减少启动消耗时间
+
+
+
+jboot v4.1.2 2023-06-20:
+修复：Oracle 数据库在某些极端情况下出错的问题
+
+
+
+jboot v4.1.1 2023-06-19:
+修复：修复 MQ 通知线程在高并发场景下无法及时回收的问题
+优化：升级 JFinal 等依赖到最新版本
+
+
+
+jboot v4.1.0 2023-05-12:
+新增：自定义 JFinalFilter 的支持
+优化：重命名 JbootAccessTokenCache 为 WechatAccessTokenCache
+优化：JbootAppListenerManager 中重复的 foreach 操作 感谢 @梦行
+优化：升级 Jfinal/jfinal-undertow/jsoup 等到最新版本
+
+
+
+jboot v4.0.9 2023-03-08:
+优化：JbootResourceLoader 忽略掉 windows 和 mac 下的临时文件
+优化：修改 SqlBuilder.java 的错别字
+修复：Columns.orEqs 没有添加括号导致 sql 逻辑不对的问题
+
+
+
+jboot v4.0.8 2023-02-05:
+优化：升级 ShardingJDBC 到 5.x 最新版本
+优化：升级 Columns.in 和 notIn 等方法和错别字
+优化：升级 jfinal-undertow、jackson、metrics 等到最新版本
+
+
+
+jboot v4.0.7 2023-01-06:
+优化：重构 AttachmentManager 使之更加灵活易用
+新增：StrUtil.isStartsWithAny() 方法
+新增：FileUtil.getFileMD5() 等方法
+新增：CdnUtil.appendCdnDomain() 方法
+
+
+
+jboot v4.0.6 2022-12-31:
+修复：缓存注解自动生成 key 无法支持集合参数的问题
+优化：ApplicationUtil.java 使其在 window 下输出正确的 classpath 路径
+优化：修改 ValueFilterInterceptor.java 里的错别字
+优化：JbootConfigManager.java 配置独立目录时，再次读取 jboot.properties 文件
+
+
+
+jboot v4.0.5 2022-12-29:
+新增：jboot.cache.cacheSyncMqChannel 的配置，用于对分布式缓存的 channel 进行自定义
+优化：JbootRedisCacheImpl 初始化的错误提示内容
+优化：ClassUtil.newInstance() 方法，方便对构造器进行传参
+优化：删除无用的 GenTester.java 文件
+优化：不再对 JbootSerializerManager 进行 Aop 增强
+优化：不再对 JbootmqManager 进行 Aop 增强
+优化：不再对 JbootEventManager 进行 Aop 增强
+
+
+
+jboot v4.0.2 2022-12-16:
+新增：db.each 的 sql 打印输出
+新增：通过 Controller 获取参数时，自动对参数进行 trim 操作
+新增：配置文件可以外部的任意目录
+优化：升级 jfinal 到最新版本
+
+
+
+jboot v4.0.1 2022-12-03:
+新增：新增可以通过配置取消 AOP 缓存的功能
+新增：新增 jboot.cache.useFirstLevelOnly 配置的功能，可以在分布式下只开启 1 级缓存
+优化：修改 aop action 等默认缓存时间为 10 分钟
+优化：ModelUtil.keep 方法
+优化：ObjectUti.convert 方法
+修复：new Model().use("ds").update() 在某些场景下出错的问题
+
+
+
+jboot v4.0.0 2022-11-27:
+优化：正式支持 jdk 17.x
+
+
+===================== v3.x =========================
+
+jboot v3.17.1 2022-11-13:
+优化：Columns.java 对空条件的判断
+优化：ClassScanner.java 支持扫描 jar 包里的 jar 包，感谢 @陈立刚
+优化：Redis 消息队列设置支持多个 database，感谢 @陈立刚
+
+
+
+jboot v3.17.0 2022-11-12:
+新增：自定义 Controller 缓存刷新 key 的功能
+优化：Jboot MQ 在启动和停止的时候，不对已启动进行错误抛出，方便多模块可以自由启动或停止
+优化：Jboot MQ 添加监听器的时候，自动添加 channel 信息
+优化：升级 jackson-core 等到最新版本
+
+
+
+jboot v3.16.8 2022-11-06:
+新增：Controller.getFilesOnly(Set<String> paraNames) 方法
+优化：默认关闭缓存日志
+
+
+
+jboot v3.16.7 2022-10-31:
+新增：添加 CachePrinter 的支持，方便把缓存信息输出在控制台或者日志上
+优化：JbootResourceLoader 优化过滤掉 Windows 的临时文件
+优化：使用注解验证数据时，控制台不再抛出异常信息，只打印基本验证错误信息
+优化：为验证码等组件缓存过滤掉线程前缀的设置
+
+
+
+jboot v3.16.6 2022-10-25:
+修复：HttpUtil.download 出现 NPE 的问题
+
+
+
+jboot v3.16.5 2022-10-23:
+修复：Controller 使用返回值渲染并使用 cacheable 注解对其缓存时出错的问题
+修复：ObjectUtil.convert() 在某些极端情况下错误的问题
+
+
+
+jboot v3.16.4 2022-10-19:
+优化：doNotAlloVisitRedirect 错别字
+优化：修改 CacheUtil.setCurrentPrefix() 方法为 setThreadCacheNamePrefix
+新增：添加 JbootCache.addThreadCacheNamePrefixIngore() 方法
+
+
+
+jboot v3.16.3 2022-10-17:
+新增：SqlBuilder.escapeOrderBySql 用于过滤 Order By 参数
+新增：InterceptorBuilder.Util.isChildClassOf 方法
+新增：JbootController.getParaToBigInteger(index) 方法
+优化：RequestUtil.getIpAddress() 对 127.0.0.1 的处理
+优化：JbootResourceLoader 的日志输出和目标路径的优化
+
+
+
+jboot v3.16.2 2022-10-07:
+新增：ObjectUtil.obtainNotNull 方法
+新增：StrUtil.obtainNotBlank 方法
+优化：升级 jfinal-undertow 到最新版本并移除 JbootApplication 的 URL 打印功功能。
+
+
+
+jboot v3.16.1:
+新增：APP 在启动的时候，输出 Local URL，方便通过控制台启动浏览器
+新增：FileUtil.ensuresParentExists() 方法
+新增：DAO.deleteAll() 方法
+修复：Controller 通过 return 渲染 Json 数据时，控制台不输出 Render 信息的问题
+修复：JbootController.getFileOnly(name) 返回的数据不正确
+
+
+
+jboot v3.16.0:
+优化：重构 @Cacheable 在 Controller 中的使用，使之更加灵活方便
+优化：FileUtil.unzip 方法，添加可以指定解压缩编码的参数
+优化：升级 JFinal、 jackson-core 等到最新版本
+修复：JbootServiceBase.initDao 在非泛型子类时初始化出错的问题
+修复：Sqlbuilder 在使用别名 + between 时，生成的 SQL 出错的问题
+
+
+
+jboot v3.15.10:
+优化：增强 http 工具类，默认支持携带 cookie 重定向
+优化：升级 Jsoup 到 v1.15.3 最新版本
+修复：对在中文目录下部署时，可能对环境判断错误的问题
+
+
+
+jboot v3.15.9:
+新增：Controller.getFileOnly(name) 和 getFilesOnly(names)
+优化：升级 Jsoup 等相关依赖到最新版本
+修复：当 ActionKey 注解使用 ./ 相对路径时，swagger文档中的 path 会生成包含 ./ 的错误API路径的问题
+
+
+
+jboot v3.15.8:
+新增：FileUtil.delete 方法
+新增：JbootController.getFirstFileOnly() 方法
+优化：JbootController.getFile() 设置为删除方法
+优化：升级 JFinal 到最新版本
+
+
+
+jboot v3.15.7:
+修复：RPC 的 Reference 缓存 key 构建错误导致无法命中缓存的问题
+新增：FileUtil.removeSuffix() 方法
+新增：ModelUtil.keep(List<Model> models) 方法
+新增：CollectionUtil.toString() 方法
+新增：ArrayUtil.toString() 方法
+新增：DateUtil 解析 datetime-local 方法
+
+
+
 jboot v3.15.6:
 新增：JbootmqBase 添加自定义线程池的接口方法
 新增：JbootModel.processColumns() 方法，在某些场景下用于对 Columns 进行二次加工

@@ -27,7 +27,6 @@ import io.jboot.db.datasource.DataSourceConfig;
 import io.jboot.db.datasource.DataSourceConfigManager;
 import io.jboot.db.dbpro.JbootDbProFactory;
 import io.jboot.db.dialect.*;
-import io.jboot.db.record.JbootRecordBuilder;
 import io.jboot.exception.JbootException;
 import io.jboot.exception.JbootIllegalConfigException;
 import io.jboot.utils.ClassUtil;
@@ -145,9 +144,6 @@ public class ArpManager {
         configSqlTemplate(activeRecordPlugin, config);
         configDialect(activeRecordPlugin, config);
 
-        //配置 Record 构建器
-        activeRecordPlugin.getConfig().getDialect().setRecordBuilder(new JbootRecordBuilder());
-
         /**
          * 在一个表有多个数据源的情况下，应该只需要添加一个映射就可以了
          * 添加映射：默认为该 model 的数据源
@@ -223,7 +219,7 @@ public class ArpManager {
         if (datasourceConfig.getDialectClass() != null) {
             Dialect dialect = ClassUtil.newInstance(datasourceConfig.getDialectClass(), false);
             if (dialect == null) {
-                throw new NullPointerException("can not new instance by class:" + datasourceConfig.getDialectClass());
+                throw new JbootIllegalConfigException("Can not new instance by class: " + datasourceConfig.getDialectClass());
             }
             activeRecordPlugin.setDialect(dialect);
             return;
@@ -251,6 +247,9 @@ public class ArpManager {
             case DataSourceConfig.TYPE_POSTGRESQL:
                 activeRecordPlugin.setDialect(new JbootPostgreSqlDialect());
                 break;
+            case DataSourceConfig.TYPE_DM:
+                activeRecordPlugin.setDialect(new JbootDmDialect());
+                break;
             case DataSourceConfig.TYPE_CLICKHOUSE:
                 activeRecordPlugin.setDialect(new JbootClickHouseDialect());
                 break;
@@ -258,13 +257,22 @@ public class ArpManager {
                 activeRecordPlugin.setDialect(new JbootInformixDialect());
                 break;
             default:
-                throw new JbootIllegalConfigException("only support datasource type : mysql、orcale、sqlserver、sqlite、ansisql、postgresql and clickhouse, please check your jboot.properties. ");
+                throw new JbootIllegalConfigException("only support datasource type: mysql、oracle、sqlserver、sqlite、ansisql、postgresql and clickhouse, please check your jboot.properties. ");
         }
     }
 
 
     public List<ActiveRecordPlugin> getActiveRecordPlugins() {
         return activeRecordPlugins;
+    }
+
+    public ActiveRecordPlugin getActiveRecordPlugin(String configName) {
+        for (ActiveRecordPlugin arp : activeRecordPlugins) {
+            if (configName.equals(arp.getConfig().getName())) {
+                return arp;
+            }
+        }
+        return null;
     }
 
 }

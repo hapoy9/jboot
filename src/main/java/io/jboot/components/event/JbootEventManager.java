@@ -28,7 +28,7 @@ import java.util.concurrent.*;
 public class JbootEventManager {
 
     private static final Log LOG = Log.getLog(JbootEventManager.class);
-    private static JbootEventManager manager;
+    private static JbootEventManager manager = new JbootEventManager();
 
     private final Map<String, List<JbootEventListener>> asyncListenerMap;
     private final Map<String, List<JbootEventListener>> listenerMap;
@@ -37,21 +37,15 @@ public class JbootEventManager {
     private ExecutorService threadPool;
 
 
-    public JbootEventManager() {
+    private JbootEventManager() {
         asyncListenerMap = new ConcurrentHashMap<>();
         listenerMap = new ConcurrentHashMap<>();
-
-        threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-                60L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), new NamedThreadFactory("jboot-event"));
+        threadPool = NamedThreadPools.newFixedThreadPool("jboot-event");
 
         initListeners();
     }
 
     public static JbootEventManager me() {
-        if (manager == null) {
-            manager = ClassUtil.singleton(JbootEventManager.class);
-        }
         return manager;
     }
 
@@ -183,7 +177,7 @@ public class JbootEventManager {
         return false;
     }
 
-    public void pulish(final JbootEvent event) {
+    public void publish(final JbootEvent event) {
         String action = event.getAction();
 
         List<JbootEventListener> syncListeners = listenerMap.get(action);

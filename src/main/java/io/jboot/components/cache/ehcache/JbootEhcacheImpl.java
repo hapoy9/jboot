@@ -16,7 +16,6 @@
 package io.jboot.components.cache.ehcache;
 
 import com.jfinal.kit.PathKit;
-import com.jfinal.log.Log;
 import com.jfinal.plugin.ehcache.IDataLoader;
 import io.jboot.Jboot;
 import io.jboot.components.cache.JbootCacheBase;
@@ -36,8 +35,6 @@ public class JbootEhcacheImpl extends JbootCacheBase {
     private CacheManager cacheManager;
     private static Object locker = new Object();
 
-    private static final Log log = Log.getLog(JbootEhcacheImpl.class);
-
     private CacheEventListener cacheEventListener;
 
     public JbootEhcacheImpl(JbootCacheConfig config) {
@@ -47,8 +44,8 @@ public class JbootEhcacheImpl extends JbootCacheBase {
             cacheManager = CacheManager.create();
         } else {
             String configPath = ehconfig.getConfigFileName();
-            if (!configPath.startsWith("/")){
-                configPath = PathKit.getRootClassPath()+"/"+configPath;
+            if (!configPath.startsWith("/")) {
+                configPath = PathKit.getRootClassPath() + "/" + configPath;
             }
             cacheManager = CacheManager.create(configPath);
         }
@@ -85,12 +82,25 @@ public class JbootEhcacheImpl extends JbootCacheBase {
     @Override
     public <T> T get(String cacheName, Object key) {
         Element element = getOrAddCache(cacheName).get(key);
-        return element != null ? (T) element.getObjectValue() : null;
+        if (element == null) {
+            return null;
+        }
+
+        Object objectValue = element.getObjectValue();
+        if (config.isDevMode()) {
+            println("Ehcache GET: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + objectValue);
+        }
+        return (T) objectValue;
+
     }
 
     @Override
     public void put(String cacheName, Object key, Object value) {
         getOrAddCache(cacheName).put(new Element(key, value));
+
+        if (config.isDevMode()) {
+            println("Ehcache PUT: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + value);
+        }
     }
 
     @Override
@@ -102,17 +112,29 @@ public class JbootEhcacheImpl extends JbootCacheBase {
         Element element = new Element(key, value);
         element.setTimeToLive(liveSeconds);
         getOrAddCache(cacheName).put(element);
+
+        if (config.isDevMode()) {
+            println("Ehcache PUT: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + value);
+        }
     }
 
     @Override
     public void remove(String cacheName, Object key) {
         getOrAddCache(cacheName).remove(key);
+
+        if (config.isDevMode()) {
+            println("Ehcache REMOVE: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"]");
+        }
     }
 
     @Override
     public void removeAll(String cacheName) {
         getOrAddCache(cacheName).removeAll();
         cacheManager.removeCache(cacheName);
+
+        if (config.isDevMode()) {
+            println("Ehcache REMOVEALL: cacheName[" +buildCacheName(cacheName)+ "]");
+        }
     }
 
     @Override
@@ -121,6 +143,10 @@ public class JbootEhcacheImpl extends JbootCacheBase {
         if (data == null) {
             data = dataLoader.load();
             put(cacheName, key, data);
+        }
+
+        if (config.isDevMode()) {
+            println("Ehcache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + data);
         }
         return (T) data;
     }
@@ -135,6 +161,11 @@ public class JbootEhcacheImpl extends JbootCacheBase {
             data = dataLoader.load();
             put(cacheName, key, data, liveSeconds);
         }
+
+        if (config.isDevMode()) {
+            println("Ehcache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + data);
+        }
+
         return (T) data;
     }
 
@@ -154,6 +185,10 @@ public class JbootEhcacheImpl extends JbootCacheBase {
 
         element.setTimeToLive(seconds);
         getOrAddCache(cacheName).put(element);
+
+        if (config.isDevMode()) {
+            println("Ehcache SETTTL: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] seconds:" + seconds);
+        }
     }
 
     @Override
@@ -165,7 +200,6 @@ public class JbootEhcacheImpl extends JbootCacheBase {
     public List getKeys(String cacheName) {
         return getOrAddCache(cacheName).getKeys();
     }
-
 
 
     public CacheManager getCacheManager() {

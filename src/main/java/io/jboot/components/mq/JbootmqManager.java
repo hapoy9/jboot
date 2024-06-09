@@ -24,7 +24,6 @@ import io.jboot.components.mq.redismq.JbootRedismqImpl;
 import io.jboot.components.mq.rocketmq.JbootRocketmqImpl;
 import io.jboot.core.spi.JbootSpiLoader;
 import io.jboot.exception.JbootIllegalConfigException;
-import io.jboot.utils.ClassUtil;
 import io.jboot.utils.ConfigUtil;
 
 import java.util.Map;
@@ -33,17 +32,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class JbootmqManager {
 
-    private static JbootmqManager manager;
+    private static JbootmqManager manager = new JbootmqManager();
+
+    private JbootmqManager(){}
 
     public static JbootmqManager me() {
-        if (manager == null) {
-            manager = ClassUtil.singleton(JbootmqManager.class);
-        }
         return manager;
     }
 
     private Map<String, Jbootmq> jbootmqMap = new ConcurrentHashMap<>();
-
 
     public Jbootmq getJbootmq() {
         return getJbootmq("default");
@@ -61,11 +58,23 @@ public class JbootmqManager {
 
                     configModels.putIfAbsent("default", Jboot.config(JbootmqConfig.class));
 
+                    JbootmqConfig mqConfig = null;
                     if (!configModels.containsKey(name)) {
-                        throw new JbootIllegalConfigException("Please config \"jboot.mq." + name + ".type\" in your jboot.properties.");
+                        for (JbootmqConfig config : configModels.values()) {
+                        	if (name.equals(config.getTypeName())) {
+                        		mqConfig = config;
+                        		break;
+                        	}
+                        }
+                        if (mqConfig == null) {
+                            throw new JbootIllegalConfigException("Please config \"jboot.mq.other" + name + ".type\" in your jboot.properties.");
+                        }
+                    }
+                    else {
+                    	mqConfig = configModels.get(name);
                     }
 
-                    mq = getJbootmq(configModels.get(name));
+                    mq = getJbootmq(mqConfig);
                     if (mq != null) {
                         jbootmqMap.put(name, mq);
                     }
@@ -107,5 +116,14 @@ public class JbootmqManager {
                 return JbootSpiLoader.load(Jbootmq.class, config.getType(), config);
         }
 
+    }
+
+
+    public void init() {
+        jbootmqMap.values().forEach(Jbootmq::startListening);
+    }
+
+    public void stop() {
+        jbootmqMap.values().forEach(Jbootmq::stopListening);
     }
 }

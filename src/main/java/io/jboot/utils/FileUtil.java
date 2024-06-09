@@ -16,17 +16,30 @@
 package io.jboot.utils;
 
 import com.jfinal.core.JFinal;
+import com.jfinal.kit.Base64Kit;
+import com.jfinal.kit.HashKit;
 import com.jfinal.kit.LogKit;
 import com.jfinal.kit.PathKit;
+import com.jfinal.upload.UploadFile;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 
 public class FileUtil {
 
+    /**
+     * 获取文件后缀
+     *
+     * @param fileName eg: jboot.jpg
+     * @return suffix eg: .jpg
+     */
     public static String getSuffix(String fileName) {
         if (fileName != null && fileName.contains(".")) {
             return fileName.substring(fileName.lastIndexOf("."));
@@ -96,18 +109,65 @@ public class FileUtil {
 
 
     public static void writeString(File file, String content, String charsetName) {
-        if (!file.getParentFile().exists()) {
-            file.getParentFile().mkdirs();
-        }
+        writeString(file, content, charsetName, false);
+    }
+
+    public static void writeString(File file, String content, String charsetName, boolean append) {
         FileOutputStream fos = null;
         try {
-            fos = new FileOutputStream(file, false);
+            ensuresParentExists(file);
+            fos = new FileOutputStream(file, append);
             fos.write(content.getBytes(charsetName));
         } catch (Exception e) {
             LogKit.error(e.toString(), e);
         } finally {
             close(fos);
         }
+    }
+
+    public static void ensuresParentExists(File currentFile) throws IOException {
+        if (!currentFile.getParentFile().exists()
+                && !currentFile.getParentFile().mkdirs()) {
+            throw new IOException("Can not mkdirs for file: " + currentFile.getParentFile());
+        }
+    }
+
+
+    /**
+     * 获取文件的 md5
+     *
+     * @param file
+     * @return
+     */
+    public static String getFileMD5(File file) {
+        return getFileMD5(file, false);
+    }
+
+
+    /**
+     * 获取文件 md5 的 base64 编码
+     *
+     * @param file
+     * @return
+     */
+    public static String getFileMd5Base64(File file) {
+        return getFileMD5(file, true);
+    }
+
+
+    private static String getFileMD5(File file, boolean withBase64) {
+        try (FileInputStream fiStream = new FileInputStream(file)) {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = fiStream.read(buffer)) != -1) {
+                digest.update(buffer, 0, length);
+            }
+            return withBase64 ? Base64Kit.encode(digest.digest()) : HashKit.toHex(digest.digest());
+        } catch (Exception e) {
+            LogKit.error(e.toString(), e);
+        }
+        return null;
     }
 
 
@@ -118,18 +178,18 @@ public class FileUtil {
 
     public static void unzip(String zipFilePath) throws IOException {
         String targetPath = zipFilePath.substring(0, zipFilePath.lastIndexOf("."));
-        unzip(zipFilePath, targetPath, true);
+        unzip(zipFilePath, targetPath, true, StandardCharsets.UTF_8);
     }
 
 
     public static void unzip(String zipFilePath, String targetPath) throws IOException {
-        unzip(zipFilePath, targetPath, true);
+        unzip(zipFilePath, targetPath, true, StandardCharsets.UTF_8);
     }
 
 
-    public static void unzip(String zipFilePath, String targetPath, boolean safeUnzip) throws IOException {
+    public static void unzip(String zipFilePath, String targetPath, boolean safeUnzip, Charset charset) throws IOException {
         targetPath = getCanonicalPath(new File(targetPath));
-        ZipFile zipFile = new ZipFile(zipFilePath);
+        ZipFile zipFile = new ZipFile(zipFilePath, charset);
         try {
             Enumeration<?> entryEnum = zipFile.entries();
             while (entryEnum.hasMoreElements()) {
@@ -143,15 +203,14 @@ public class FileUtil {
                             continue;
                         }
 
-                        File targetFile = new File(targetPath + File.separator + zipEntry.getName());
-                        if (safeUnzip && !getCanonicalPath(targetFile).startsWith(targetPath)) {
-                            //Unsafe
-                            continue;
+                        File targetFile = new File(targetPath, zipEntry.getName());
+
+                        ensuresParentExists(targetFile);
+
+                        if (!targetFile.toPath().normalize().startsWith(targetPath)) {
+                            throw new IOException("Bad zip entry");
                         }
 
-                        if (!targetFile.getParentFile().exists()) {
-                            targetFile.getParentFile().mkdirs();
-                        }
                         os = new BufferedOutputStream(new FileOutputStream(targetFile));
                         is = zipFile.getInputStream(zipEntry);
                         byte[] buffer = new byte[4096];
@@ -187,6 +246,33 @@ public class FileUtil {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void delete(File file) {
+        if (file == null) {
+            return;
+        }
+
+        if (!file.delete()) {
+            LogKit.error("File {} can not deleted!", getCanonicalPath(file));
+        }
+    }
+
+    public static void delete(UploadFile file) {
+        if (file == null) {
+            return;
+        }
+
+        delete(file.getFile());
+    }
+
+
+    public static void delete(List<UploadFile> files) {
+        if (files == null) {
+            return;
+        }
+
+        files.forEach(FileUtil::delete);
     }
 
 }

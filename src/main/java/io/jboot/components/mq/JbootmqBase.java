@@ -19,12 +19,13 @@ import com.jfinal.kit.LogKit;
 import com.jfinal.log.Log;
 import io.jboot.Jboot;
 import io.jboot.components.serializer.JbootSerializer;
-import io.jboot.exception.JbootException;
-import io.jboot.utils.NamedThreadFactory;
+import io.jboot.utils.NamedThreadPools;
 import io.jboot.utils.StrUtil;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 
 
 public abstract class JbootmqBase implements Jbootmq {
@@ -37,14 +38,10 @@ public abstract class JbootmqBase implements Jbootmq {
     private Map<String, List<JbootmqMessageListener>> channelListeners = new ConcurrentHashMap<>();
 
     protected Set<String> channels = new HashSet<>();
-    protected Set<String> syncRecevieMessageChannels = new HashSet<>();
+    protected Set<String> syncReceiveMessageChannels = new HashSet<>();
     protected JbootSerializer serializer;
 
-
-    private ExecutorService threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-            60L, TimeUnit.SECONDS,
-            new SynchronousQueue<>(), new NamedThreadFactory("jbootmq"));
-
+    private ExecutorService threadPool = NamedThreadPools.newFixedThreadPool("jbootmq");
 
     public JbootmqBase(JbootmqConfig config) {
         this.config = config;
@@ -56,7 +53,7 @@ public abstract class JbootmqBase implements Jbootmq {
         this.channels.addAll(StrUtil.splitToSet(channelString, ","));
 
         if (StrUtil.isNotBlank(config.getSyncRecevieMessageChannel())) {
-            this.syncRecevieMessageChannels.addAll(StrUtil.splitToSet(config.getSyncRecevieMessageChannel(), ","));
+            this.syncReceiveMessageChannels.addAll(StrUtil.splitToSet(config.getSyncRecevieMessageChannel(), ","));
         }
     }
 
@@ -77,13 +74,14 @@ public abstract class JbootmqBase implements Jbootmq {
         }
     }
 
-    private synchronized void addChannelListener(String channel, JbootmqMessageListener listener) {
+    public final synchronized void addChannelListener(String channel, JbootmqMessageListener listener) {
         List<JbootmqMessageListener> listeners = channelListeners.get(channel);
         if (listeners == null) {
             listeners = new CopyOnWriteArrayList<>();
             channelListeners.put(channel, listeners);
         }
         listeners.add(listener);
+        channels.add(channel);
     }
 
 
@@ -120,7 +118,7 @@ public abstract class JbootmqBase implements Jbootmq {
         boolean channelResult = notifyListeners(channel, message, context, channelListeners.get(channel));
 
         if (!globalResult && !channelResult) {
-            LOG.warn("Jboot has recevied mq message, But it has no listener to process. channel:" +
+            LOG.warn("Jboot has received mq message, But it has no listener to process. channel:" +
                     channel + "  message:" + message);
         }
     }
@@ -131,7 +129,7 @@ public abstract class JbootmqBase implements Jbootmq {
             return false;
         }
 
-        if (syncRecevieMessageChannels.contains(channel)) {
+        if (syncReceiveMessageChannels.contains(channel)) {
             for (JbootmqMessageListener listener : listeners) {
                 try {
                     listener.onMessage(channel, message, context);
@@ -167,11 +165,13 @@ public abstract class JbootmqBase implements Jbootmq {
     @Override
     public boolean startListening() {
         if (isStarted) {
-            throw new JbootException("Jboot MQ has started.");
+            return true;
         }
 
         if (channels == null || channels.isEmpty()) {
-            throw new JbootException("Jboot MQ's channels is null or empty, Please config channels.");
+            LogKit.warn("Jboot MQ started fail. because it's channels is empty, please config channels. " +
+                    "MQ name: {}, type:{}", config.getName(), config.getType());
+            return false;
         }
 
         try {
@@ -183,14 +183,14 @@ public abstract class JbootmqBase implements Jbootmq {
             return false;
         }
 
-
         return true;
     }
+
 
     @Override
     public boolean stopListening() {
         if (!isStarted) {
-            throw new JbootException("Jboot MQ has stoped.");
+            return true;
         }
 
         try {

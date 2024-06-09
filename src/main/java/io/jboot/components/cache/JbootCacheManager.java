@@ -40,6 +40,12 @@ public class JbootCacheManager {
     }
 
     private Map<String, JbootCache> cacheMap = new ConcurrentHashMap<>();
+    private CachePrinter printer = new CachePrinter() {
+        @Override
+        public void println(String debugInfo) {
+            CachePrinter.super.println(debugInfo);
+        }
+    };
 
     public static JbootCacheManager me() {
         return me;
@@ -51,7 +57,7 @@ public class JbootCacheManager {
 
     public JbootCache getCache(String name) {
         if (StrUtil.isBlank(name)) {
-            throw new IllegalArgumentException("cache name must not be null or blank.");
+            throw new IllegalArgumentException("Cache name must not be null or blank.");
         }
 
         JbootCache cache = cacheMap.get(name);
@@ -99,5 +105,13 @@ public class JbootCacheManager {
             default:
                 return JbootSpiLoader.load(JbootCache.class, config.getType(), config);
         }
+    }
+
+    public CachePrinter getPrinter() {
+        return printer;
+    }
+
+    public void setPrinter(CachePrinter printer) {
+        this.printer = printer;
     }
 }

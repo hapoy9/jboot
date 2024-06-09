@@ -15,26 +15,24 @@
  */
 package io.jboot.db.dbpro;
 
-import com.jfinal.plugin.activerecord.Config;
-import com.jfinal.plugin.activerecord.DbPro;
-import com.jfinal.plugin.activerecord.Record;
+import com.jfinal.kit.StrKit;
+import com.jfinal.plugin.activerecord.*;
 import com.jfinal.plugin.activerecord.dialect.Dialect;
 import io.jboot.db.SqlDebugger;
 import io.jboot.db.dialect.JbootDialect;
 import io.jboot.db.model.Columns;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author Michael Yang 杨福海 （fuhai999@gmail.com）
  * @version V1.0
  */
 public class JbootDbPro extends DbPro {
+    private static final String[] NO_PRIMARY_KEYS = new String[0];
 
     public JbootDbPro() {
     }
@@ -65,7 +63,7 @@ public class JbootDbPro extends DbPro {
 
     @Override
     protected boolean save(Config config, Connection conn, String tableName, String primaryKey, Record record) throws SQLException {
-        String[] pKeys = primaryKey.split(",");
+        String[] pKeys = StrKit.notBlank(primaryKey) ? primaryKey.split(",") : NO_PRIMARY_KEYS;
         List<Object> paras = new ArrayList<Object>();
         StringBuilder sql = new StringBuilder();
 
@@ -116,5 +114,41 @@ public class JbootDbPro extends DbPro {
         return columns.isEmpty() ? delete(sql) : delete(sql, columns.getValueArray());
     }
 
+    @Override
+    public void each(Function<Record, Boolean> func, String sql, Object... paras) {
+        //Connection conn = null;
+        //		try {
+        //			conn = config.getConnection();
+        //
+        //			try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        //				config.dialect.fillStatement(pst, paras);
+        //				ResultSet rs = pst.executeQuery();
+        //				config.dialect.eachRecord(config, rs, func);
+        //				DbKit.close(rs);
+        //			}
+        //
+        //		} catch (Exception e) {
+        //			throw new ActiveRecordException(e);
+        //		} finally {
+        //			config.close(conn);
+        //		}
 
+        Dialect dialect = config.getDialect();
+        try {
+            SqlDebugger.run(() -> {
+                try (Connection conn = config.getConnection();
+                     PreparedStatement pst = conn.prepareStatement(sql)) {
+
+                    dialect.fillStatement(pst, paras);
+
+                    try (ResultSet rs = pst.executeQuery();) {
+                        dialect.eachRecord(config, rs, func);
+                    }
+                }
+                return true;
+            }, config, sql, paras);
+        } catch (Exception e) {
+            throw new ActiveRecordException(e);
+        }
+    }
 }

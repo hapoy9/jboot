@@ -107,7 +107,6 @@ public class JbootApplication {
         ApplicationUtil.printApplicationInfo(appConfig);
         ApplicationUtil.printClassPath();
 
-
         return new JbootUndertowServer(undertowConfig)
                 .configWeb(webBuilder -> {
                     tryAddContenTypes(webBuilder);

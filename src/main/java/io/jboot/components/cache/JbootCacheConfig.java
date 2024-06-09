@@ -17,6 +17,7 @@ package io.jboot.components.cache;
 
 
 import com.google.common.collect.Sets;
+import io.jboot.Jboot;
 import io.jboot.app.config.annotation.ConfigModel;
 
 import java.util.Set;
@@ -41,6 +42,13 @@ public class JbootCacheConfig {
     private String typeName;
 
     private String defaultCachePrefix;
+    private Boolean devMode = false;
+
+    //只启用一级缓存，针对分布式场景下，redis 有关闭了 scan keys 等指令的时候
+    //可以使用 redis 的消息机制做缓存同步
+    private boolean useFirstLevelOnly = false;
+
+    private String cacheSyncMqChannel;
 
 
     public String getName() {
@@ -76,4 +84,27 @@ public class JbootCacheConfig {
         this.defaultCachePrefix = defaultCachePrefix;
     }
 
+    public boolean isDevMode() {
+        return devMode == null ? Jboot.isDevMode() : devMode;
+    }
+
+    public void setDevMode(Boolean devMode) {
+        this.devMode = devMode;
+    }
+
+    public boolean isUseFirstLevelOnly() {
+        return useFirstLevelOnly;
+    }
+
+    public void setUseFirstLevelOnly(boolean useFirstLevelOnly) {
+        this.useFirstLevelOnly = useFirstLevelOnly;
+    }
+
+    public String getCacheSyncMqChannel() {
+        return cacheSyncMqChannel;
+    }
+
+    public void setCacheSyncMqChannel(String cacheSyncMqChannel) {
+        this.cacheSyncMqChannel = cacheSyncMqChannel;
+    }
 }

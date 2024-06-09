@@ -16,12 +16,15 @@
 package io.jboot.web.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.jfinal.core.ActionException;
 import com.jfinal.core.Controller;
 import com.jfinal.core.NotAction;
 import com.jfinal.kit.StrKit;
 import com.jfinal.render.RenderManager;
+import com.jfinal.upload.UploadFile;
 import io.jboot.support.jwt.JwtManager;
+import io.jboot.utils.FileUtil;
 import io.jboot.utils.RequestUtil;
 import io.jboot.utils.StrUtil;
 import io.jboot.utils.TypeDef;
@@ -31,10 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 public class JbootController extends Controller {
@@ -464,6 +464,7 @@ public class JbootController extends Controller {
     }
 
 
+
     @NotAction
     public Map<String, String> getParas() {
         Map<String, String> map = null;
@@ -479,19 +480,49 @@ public class JbootController extends Controller {
     }
 
 
+    @Override
+    @NotAction
+    public String getPara() {
+        return tryToTrim(super.getPara());
+    }
+
+
+    @Override
+    @NotAction
+    public String getPara(String name) {
+        return tryToTrim(super.getPara(name));
+    }
+
+
+    @Override
+    @NotAction
+    public String getPara(int index, String defaultValue) {
+        return tryToTrim(super.getPara(index, defaultValue));
+    }
+
+
+    @Override
+    @NotAction
+    public String getPara(String name, String defaultValue) {
+        return tryToTrim(super.getPara(name, defaultValue));
+    }
+
+
     @NotAction
     public String getTrimPara(String name) {
-        String value = super.getPara(name);
-        value = (value == null ? null : value.trim());
-        return "".equals(value) ? null : value;
+        return getPara(name);
     }
 
 
     @NotAction
     public String getTrimPara(int index) {
-        String value = super.getPara(index);
-        value = (value == null ? null : value.trim());
-        return "".equals(value) ? null : value;
+        return getPara(index);
+    }
+
+
+    @NotAction
+    private String tryToTrim(String value){
+        return value != null ? value.trim() : null;
     }
 
 
@@ -619,6 +650,18 @@ public class JbootController extends Controller {
     }
 
 
+    @NotAction
+    public BigInteger getParaToBigInteger(int index) {
+        return toBigInteger(getTrimPara(index), null);
+    }
+
+
+    @NotAction
+    public BigInteger getParaToBigInteger(int index, BigInteger defaultValue) {
+        return toBigInteger(getTrimPara(index), defaultValue);
+    }
+
+
     /**
      * Returns the value of a request parameter and convert to BigInteger.
      *
@@ -649,6 +692,18 @@ public class JbootController extends Controller {
     @NotAction
     public BigInteger getBigInteger(String name, BigInteger defaultValue) {
         return toBigInteger(getTrimPara(name), defaultValue);
+    }
+
+
+    @NotAction
+    public BigInteger getBigInteger(int index) {
+        return toBigInteger(getTrimPara(index), null);
+    }
+
+
+    @NotAction
+    public BigInteger getBigInteger(int index, BigInteger defaultValue) {
+        return toBigInteger(getTrimPara(index), defaultValue);
     }
 
 
@@ -749,7 +804,123 @@ public class JbootController extends Controller {
         }
         return attrs;
     }
-    
+
+
+    /**
+     * 使用 getFirstFileOnly，否则恶意上传的安全问题
+     *
+     * @return
+     */
+    @NotAction
+    @Override
+    public UploadFile getFile() {
+        return getFirstFileOnly();
+    }
+
+
+    /**
+     * 只获取第一个文件，若上传多个文件，则删除其他文件
+     *
+     * @return
+     */
+    @NotAction
+    public UploadFile getFirstFileOnly() {
+        List<UploadFile> uploadFiles = getFiles();
+        if (uploadFiles == null || uploadFiles.isEmpty()) {
+            return null;
+        }
+
+        if (uploadFiles.size() == 1) {
+            return uploadFiles.get(0);
+        }
+
+        for (int i = 1; i < uploadFiles.size(); i++) {
+            UploadFile uploadFile = uploadFiles.get(i);
+            FileUtil.delete(uploadFile);
+        }
+
+        return uploadFiles.get(0);
+    }
+
+
+    /**
+     * 值返回特定文件，其他文件则删除
+     *
+     * @param name
+     * @return
+     */
+    @NotAction
+    public UploadFile getFileOnly(String name) {
+        List<UploadFile> uploadFiles = getFiles();
+        if (uploadFiles == null || uploadFiles.isEmpty()) {
+            return null;
+        }
+
+        UploadFile ret = null;
+        for (UploadFile uploadFile : uploadFiles) {
+            if (ret == null && name.equals(uploadFile.getParameterName())) {
+                ret = uploadFile;
+            } else {
+                FileUtil.delete(uploadFile);
+            }
+        }
+
+        return ret;
+    }
+
+
+    /**
+     * 只返回特定的名称的文件，其他文件则删除
+     *
+     * @param paraNames
+     * @return
+     */
+    @NotAction
+    public Map<String, UploadFile> getFilesOnly(String... paraNames) {
+        if (paraNames == null || paraNames.length == 0) {
+            throw new IllegalArgumentException("names can not be null or empty.");
+        }
+        return getFilesOnly(Sets.newHashSet(paraNames));
+    }
+
+
+    /**
+     * 只返回特定的名称的文件，其他文件则删除
+     * @param paraNames
+     * @return
+     */
+    @NotAction
+    public Map<String, UploadFile> getFilesOnly(Set<String> paraNames) {
+        if (paraNames == null || paraNames.size() == 0) {
+            throw new IllegalArgumentException("names can not be null or empty.");
+        }
+
+        List<UploadFile> allUploadFiles = getFiles();
+        if (allUploadFiles == null || allUploadFiles.isEmpty()) {
+            return null;
+        }
+
+        Map<String, UploadFile> filesMap = new HashMap<>();
+
+        for (UploadFile uploadFile : allUploadFiles) {
+            String parameterName = uploadFile.getParameterName();
+            if (StrUtil.isBlank(parameterName)) {
+                FileUtil.delete(uploadFile);
+                continue;
+            }
+
+            parameterName = parameterName.trim();
+
+            if (paraNames.contains(parameterName) && !filesMap.containsKey(parameterName)) {
+                filesMap.put(parameterName, uploadFile);
+            } else {
+                FileUtil.delete(uploadFile);
+            }
+        }
+
+        return filesMap;
+    }
+
 
     @NotAction
     public String renderToStringWithAttrs(String template) {
@@ -762,6 +933,7 @@ public class JbootController extends Controller {
         if (data == null) {
             data = getAttrs();
         } else {
+            data = new HashMap(data);
             for (Enumeration<String> names = getAttrNames(); names.hasMoreElements(); ) {
                 String attrName = names.nextElement();
                 if (!data.containsKey(attrName)) {
@@ -769,6 +941,7 @@ public class JbootController extends Controller {
                 }
             }
         }
+
         return super.renderToString(template, data);
     }
 }

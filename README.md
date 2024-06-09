@@ -1,3 +1,4 @@
+![](./doc/docs/static/images/jboot-logo.png)
 
 Jboot 是一个基于 JFinal、Dubbo、Seata、Sentinel、ShardingSphere、Nacos 等开发的国产框架。
 
@@ -23,7 +24,7 @@ Jboot 是一个基于 JFinal、Dubbo、Seata、Sentinel、ShardingSphere、Nacos
 <dependency>
     <groupId>io.jboot</groupId>
     <artifactId>jboot</artifactId>
-    <version>3.15.6</version>
+    <version>4.1.6</version>
 </dependency>
 ```
 

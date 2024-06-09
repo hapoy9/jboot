@@ -136,6 +136,11 @@ public class ObjectUtil {
 
 
     public static Object convert(Object value, Class<?> targetClass) {
+        if (value == null || (value.getClass() == String.class && StrUtil.isBlank((String) value)
+                && targetClass != String.class)) {
+            return null;
+        }
+
         if (value.getClass().isAssignableFrom(targetClass)) {
             return value;
         }
@@ -177,13 +182,13 @@ public class ObjectUtil {
         } else if (targetClass == byte[].class) {
             return value.toString().getBytes();
         } else if (targetClass == Date.class) {
-            return parseDate(value);
+            return DateUtil.parseDate(value);
         } else if (targetClass == LocalDateTime.class) {
-            return DateUtil.toLocalDateTime(parseDate(value));
+            return DateUtil.toLocalDateTime(DateUtil.parseDate(value));
         } else if (targetClass == LocalDate.class) {
-            return DateUtil.toLocalDate(parseDate(value));
+            return DateUtil.toLocalDate(DateUtil.parseDate(value));
         } else if (targetClass == LocalTime.class) {
-            return DateUtil.toLocalTime(parseDate(value));
+            return DateUtil.toLocalTime(DateUtil.parseDate(value));
         } else if (targetClass == Short.class || targetClass == short.class) {
             if (value instanceof Number) {
                 return ((Number) value).shortValue();
@@ -194,19 +199,6 @@ public class ObjectUtil {
         throw new RuntimeException("\"" + targetClass.getName() + "\" can not be parsed.");
     }
 
-
-    private static Date parseDate(Object value) {
-        if (value instanceof Number) {
-            return new Date(((Number) value).longValue());
-        }
-
-        String s = value.toString();
-        if (StrUtil.isNumeric(s)) {
-            return new Date(Long.parseLong(s));
-        }
-
-        return DateUtil.parseDate(s);
-    }
 
     public static Object getPrimitiveDefaultValue(Class<?> paraClass) {
         if (paraClass == int.class || paraClass == long.class || paraClass == float.class || paraClass == double.class) {
@@ -223,6 +215,21 @@ public class ObjectUtil {
             //不存在这种类型
             return null;
         }
+    }
+
+
+    public static <T> T obtainNotNull(T... ts) {
+        if (ts == null || ts.length == 0) {
+            throw new IllegalArgumentException("Arguments is null or empty.");
+        }
+
+        for (T t : ts) {
+            if (t != null) {
+                return t;
+            }
+        }
+
+        return null;
     }
 
 }

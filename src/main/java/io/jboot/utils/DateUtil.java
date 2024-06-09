@@ -17,6 +17,7 @@ package io.jboot.utils;
 
 import com.jfinal.kit.SyncWriteMap;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -43,13 +44,13 @@ public class DateUtil {
 
     private static final ThreadLocal<HashMap<String, SimpleDateFormat>> TL = ThreadLocal.withInitial(() -> new HashMap<>());
 
-    private static final Map<String, DateTimeFormatter> datetimeFormaters = new SyncWriteMap<>();
+    private static final Map<String, DateTimeFormatter> dateTimeFormatters = new SyncWriteMap<>();
 
     public static DateTimeFormatter getDateTimeFormatter(String pattern) {
-        DateTimeFormatter ret = datetimeFormaters.get(pattern);
+        DateTimeFormatter ret = dateTimeFormatters.get(pattern);
         if (ret == null) {
             ret = DateTimeFormatter.ofPattern(pattern);
-            datetimeFormaters.put(pattern, ret);
+            dateTimeFormatters.put(pattern, ret);
         }
         return ret;
     }
@@ -105,6 +106,30 @@ public class DateUtil {
     }
 
 
+    public static Date parseDate(Object value) {
+        if (value instanceof Number) {
+            return new Date(((Number) value).longValue());
+        }
+        if (value instanceof Timestamp) {
+            return new Date(((Timestamp) value).getTime());
+        }
+        if (value instanceof LocalDate) {
+            return DateUtil.toDate((LocalDate) value);
+        }
+        if (value instanceof LocalDateTime) {
+            return DateUtil.toDate((LocalDateTime) value);
+        }
+        if (value instanceof LocalTime) {
+            return DateUtil.toDate((LocalTime) value);
+        }
+        String s = value.toString();
+        if (StrUtil.isNumeric(s)) {
+            return new Date(Long.parseLong(s));
+        }
+        return DateUtil.parseDate(s);
+    }
+
+
     public static Date parseDate(String dateString) {
         if (StrUtil.isBlank(dateString)) {
             return null;
@@ -115,6 +140,24 @@ public class DateUtil {
             try {
                 return sdf.parse(dateString);
             } catch (ParseException ex) {
+                //2022-10-23 00:00:00.0
+                int lastIndexOf = dateString.lastIndexOf(".");
+                if (lastIndexOf == 19) {
+                    return parseDate(dateString.substring(0, lastIndexOf));
+                }
+
+                //2022-10-23 00:00:00,0
+                lastIndexOf = dateString.lastIndexOf(",");
+                if (lastIndexOf == 19) {
+                    return parseDate(dateString.substring(0, lastIndexOf));
+                }
+
+                //2022-10-23 00:00:00 000123
+                lastIndexOf = dateString.lastIndexOf(" ");
+                if (lastIndexOf == 19) {
+                    return parseDate(dateString.substring(0, lastIndexOf));
+                }
+
                 if (dateString.contains(".") || dateString.contains("/")) {
                     dateString = dateString.replace(".", "-").replace("/", "-");
                     return sdf.parse(dateString);

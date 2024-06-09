@@ -12,12 +12,12 @@ public class AopCache {
 
     private static JbootCache aopCache;
 
-    public static JbootCache setCurrentPrefix(String cacheNamePrefix) {
-        return getAopCache().setCurrentCacheNamePrefix(cacheNamePrefix);
+    public static JbootCache setThreadCacheNamePrefix(String cacheNamePrefix) {
+        return getAopCache().setThreadCacheNamePrefix(cacheNamePrefix);
     }
 
-    public static void clearCurrentPrefix() {
-        getAopCache().removeCurrentCacheNamePrefix();
+    public static void clearThreadCacheNamePrefix() {
+        getAopCache().clearThreadCacheNamePrefix();
     }
 
     static JbootCache getAopCache() {
@@ -131,8 +131,14 @@ public class AopCache {
         liveSeconds = liveSeconds > 0 ? liveSeconds : CONFIG.getLiveSeconds();
         if (liveSeconds > 0) {
             put(cacheName, cacheKey, data, liveSeconds);
-        } else {
+        }
+        //永久有效
+        else if (liveSeconds == 0){
             put(cacheName, cacheKey, data);
+        }
+        // -1 负数，取消 AOP 缓存
+        else {
+            // do nothing
         }
     }
 }

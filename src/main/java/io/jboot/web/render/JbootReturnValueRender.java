@@ -15,7 +15,6 @@
  */
 package io.jboot.web.render;
 
-import com.jfinal.core.Action;
 import com.jfinal.kit.JsonKit;
 import com.jfinal.render.IRenderFactory;
 import com.jfinal.render.Render;
@@ -38,15 +37,12 @@ import java.util.Date;
 public class JbootReturnValueRender extends Render {
 
     protected IRenderFactory factory = RenderManager.me().getRenderFactory();
-    protected Action action;
     protected Object value;
     protected Render render;
 
     protected String forwardTo;
 
-    public JbootReturnValueRender(Action action, Object returnValue) {
-
-        this.action = action;
+    public JbootReturnValueRender(Object returnValue) {
 
         if (returnValue == null) {
             this.value = null;
@@ -155,6 +151,10 @@ public class JbootReturnValueRender extends Render {
                 || c == Boolean.class || c == boolean.class
                 || c == Short.class || c == short.class
                 || c == BigDecimal.class || c == BigInteger.class;
+    }
+
+    public Render getRealRender(){
+        return render;
     }
 
     public String getForwardTo() {

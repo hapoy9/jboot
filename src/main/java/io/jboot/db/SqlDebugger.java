@@ -56,7 +56,7 @@ public class SqlDebugger {
     }
 
 
-    private static void doDebug(Long takedTimeMillis, String sql, Object... paras) {
+    private static void doDebug(Long tookTimeMillis, String sql, Object... paras) {
         if (paras != null) {
             for (Object value : paras) {
                 // null
@@ -86,11 +86,11 @@ public class SqlDebugger {
             }
         }
 
-        printer.print(sql, takedTimeMillis);
+        printer.print(sql, tookTimeMillis);
     }
 
 
-    public static interface SqlDebugPrinter {
+    public interface SqlDebugPrinter {
 
         SqlDebugPrinter DEFAULT_PRINTER = new SqlDebugPrinter() {
 
@@ -107,9 +107,9 @@ public class SqlDebugger {
             }
 
             @Override
-            public void print(String sql, Long takedTimeMillis) {
-                if (takedTimeMillis != null) {
-                    System.out.println("Jboot exec sql taked " + takedTimeMillis + " ms >>>  " + sql);
+            public void print(String sql, Long tookTimeMillis) {
+                if (tookTimeMillis != null) {
+                    System.out.println("Jboot exec sql took " + tookTimeMillis + " ms >>>  " + sql);
                 } else {
                     System.out.println("Jboot exec sql >>>  " + sql);
                 }
@@ -132,9 +132,9 @@ public class SqlDebugger {
             }
 
             @Override
-            public void print(String sql, Long takedTimeMillis) {
-                if (takedTimeMillis != null) {
-                    log.debug("Jboot exec sql taked " + takedTimeMillis + " ms >>>  " + sql);
+            public void print(String sql, Long tookTimeMillis) {
+                if (tookTimeMillis != null) {
+                    log.debug("Jboot exec sql took " + tookTimeMillis + " ms >>>  " + sql);
                 } else {
                     log.debug("Jboot exec sql >>>  " + sql);
                 }
@@ -145,10 +145,10 @@ public class SqlDebugger {
 
         boolean isPrintEnable(Config config);
 
-        void print(String sql, Long takedTimeMillis);
+        void print(String sql, Long tookTimeMillis);
     }
 
-    public static interface SqlRunner<V> {
+    public interface SqlRunner<V> {
         V run() throws SQLException;
     }
 }

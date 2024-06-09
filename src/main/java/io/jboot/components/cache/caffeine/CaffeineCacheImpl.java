@@ -71,17 +71,28 @@ public class CaffeineCacheImpl extends JbootCacheBase {
             cache.invalidate(key);
             return null;
         }
-        return (T) data.getValue();
+
+        T cacheData = (T) data.getValue();
+        if (config.isDevMode()) {
+            println("CaffeineCache GET: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + cacheData);
+        }
+        return cacheData;
     }
 
     @Override
     public void put(String cacheName, Object key, Object value) {
         putData(getCache(cacheName), key, new CaffeineCacheObject(value));
+        if (config.isDevMode()) {
+            println("CaffeineCache PUT: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + value);
+        }
     }
 
     @Override
     public void put(String cacheName, Object key, Object value, int liveSeconds) {
         putData(getCache(cacheName), key, new CaffeineCacheObject(value, liveSeconds));
+        if (config.isDevMode()) {
+            println("CaffeineCache PUT: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + value);
+        }
     }
 
 
@@ -92,6 +103,9 @@ public class CaffeineCacheImpl extends JbootCacheBase {
         if (cache != null) {
             cache.invalidate(key);
         }
+        if (config.isDevMode()) {
+            println("CaffeineCache REMOVE: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "]");
+        }
     }
 
     @Override
@@ -100,7 +114,10 @@ public class CaffeineCacheImpl extends JbootCacheBase {
         if (cache != null) {
             cache.invalidateAll();
         }
-        cacheMap.remove(cacheName);
+        cacheMap.remove(buildCacheName(cacheName));
+        if (config.isDevMode()) {
+            println("CaffeineCache REMOVEALL: cacheName[" + buildCacheName(cacheName) + "]");
+        }
     }
 
     @Override
@@ -112,10 +129,17 @@ public class CaffeineCacheImpl extends JbootCacheBase {
             if (newValue != null) {
                 data = new CaffeineCacheObject(newValue);
                 putData(cache, key, data);
+                if (config.isDevMode()) {
+                    println("CaffeineCache PUT: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + newValue);
+                }
             }
             return (T) newValue;
         } else {
-            return (T) data.getValue();
+            Object cacheData = data.getValue();
+            if (config.isDevMode()) {
+                println("CaffeineCache GET: cacheName[" + buildCacheName(cacheName) + "] cacheKey[" + key + "] value:" + cacheData);
+            }
+            return (T) cacheData;
         }
     }
 
@@ -128,10 +152,17 @@ public class CaffeineCacheImpl extends JbootCacheBase {
             if (newValue != null) {
                 data = new CaffeineCacheObject(newValue, liveSeconds);
                 putData(cache, key, data);
+                if (config.isDevMode()) {
+                    println("CaffeineCache PUT: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + newValue);
+                }
             }
             return (T) newValue;
         } else {
-            return (T) data.getValue();
+            Object cacheData = data.getValue();
+            if (config.isDevMode()) {
+                println("CaffeineCache GET: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] value:" + cacheData);
+            }
+            return (T) cacheData;
         }
     }
 
@@ -164,6 +195,10 @@ public class CaffeineCacheImpl extends JbootCacheBase {
 
         data.setLiveSeconds(seconds);
         putData(cache, key, data);
+
+        if (config.isDevMode()) {
+            println("CaffeineCache SETTTL: cacheName[" +buildCacheName(cacheName)+ "] cacheKey["+key+"] seconds:" + seconds);
+        }
     }
 
 
